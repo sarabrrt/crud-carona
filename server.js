@@ -195,21 +195,30 @@ app.post('/carona', (requisicao,resposta) => {
             if(err) return resposta.send(err)
             if(!result.length) return resposta.status(404).send('Carro não encontrado');
             requisicao.body.qtd_vagas = result[0].capacidade - passageiros.length
-
-            for(let i = 0; i < passageiros.length ; i++) {
-                db.collection('passageiro').find(ObjectId(passageiros[i])).toArray((err, result) => {
-                    if(err) return resposta.send(err)
-                    if(!result.length) return resposta.status(404).send('Passageiro não encontrado');
-                    if (i == (passageiros.length - 1)) {
-                        db.collection('carona').save(requisicao.body, (err, result) => {
-                            if(err) return console.log(err)
-                    
-                            console.log('salvo no banco de dados')
-                            resposta.send(requisicao.body)
-                        });
-                    }
-                })
+            if (passageiros.length == 0) {
+                db.collection('carona').save(requisicao.body, (err, result) => {
+                    if(err) return console.log(err)
+            
+                    console.log('salvo no banco de dados')
+                    resposta.send(requisicao.body)
+                });
+            } else {
+                for(let i = 0; i < passageiros.length ; i++) {
+                    db.collection('passageiro').find(ObjectId(passageiros[i])).toArray((err, result) => {
+                        if(err) return resposta.send(err)
+                        if(!result.length) return resposta.status(404).send('Passageiro não encontrado');
+                        if (i == (passageiros.length - 1)) {
+                            db.collection('carona').save(requisicao.body, (err, result) => {
+                                if(err) return console.log(err)
+                        
+                                console.log('salvo no banco de dados')
+                                resposta.send(requisicao.body)
+                            });
+                        }
+                    })
+                }
             }
+            
         });
 
     })
@@ -238,28 +247,45 @@ app.route('/carona/:id').patch((requisicao, resposta) =>{
             db.collection('carro').find(ObjectId(carona_carro)).toArray((err, result) => {
                 if(err) return resposta.send(err)
                 if(!result.length) return resposta.status(404).send('Carro não encontrado');
-    
-                for (let i = 0; i < carona_passageiros.length; i++) {
-                    db.collection('passageiro').find(ObjectId(carona_passageiros[i])).toArray((err, result) => {
-                        if(err) return resposta.send(err)
-                        if(!result.length) return resposta.status(404).send('Passageiro não encontrado');
-                        if (i == (carona_passageiros.length - 1)) {
-                            db.collection('carona').updateOne({_id: ObjectId(carona_id)},{
-                                $set:{
-                                    data: carona_data || result_carona[0].data,
-                                    origem: carona_origem || result_carona[0].origem,
-                                    destino: carona_destino || result_carona[0].destino,
-                                    qtd_vagas: carona_qtd_vagas || result_carona[0].qtd_vagas,
-                                    motorista: carona_motorista || result_carona[0].motorista,
-                                    passageiros: carona_passageiros || result_carona[0].passageiros,
-                                    carro_id: carona_carro || result_carona[0].carro_id
-                                }
-                            },(err, result) => {
-                                if(err) return resposta.send(err)
-                                resposta.send()
-                            })
+                
+                if (carona_passageiros.length == 0) {
+                    db.collection('carona').updateOne({_id: ObjectId(carona_id)},{
+                        $set:{
+                            data: carona_data || result_carona[0].data,
+                            origem: carona_origem || result_carona[0].origem,
+                            destino: carona_destino || result_carona[0].destino,
+                            qtd_vagas: carona_qtd_vagas || result_carona[0].qtd_vagas,
+                            motorista: carona_motorista || result_carona[0].motorista,
+                            passageiros: carona_passageiros || result_carona[0].passageiros,
+                            carro_id: carona_carro || result_carona[0].carro_id
                         }
-                    })
+                    },(err, result) => {
+                        if(err) return resposta.send(err)
+                        resposta.send()
+                    }) 
+                } else {
+                    for (let i = 0; i < carona_passageiros.length; i++) {
+                        db.collection('passageiro').find(ObjectId(carona_passageiros[i])).toArray((err, result) => {
+                            if(err) return resposta.send(err)
+                            if(!result.length) return resposta.status(404).send('Passageiro não encontrado');
+                            if (i == (carona_passageiros.length - 1)) {
+                                db.collection('carona').updateOne({_id: ObjectId(carona_id)},{
+                                    $set:{
+                                        data: carona_data || result_carona[0].data,
+                                        origem: carona_origem || result_carona[0].origem,
+                                        destino: carona_destino || result_carona[0].destino,
+                                        qtd_vagas: carona_qtd_vagas || result_carona[0].qtd_vagas,
+                                        motorista: carona_motorista || result_carona[0].motorista,
+                                        passageiros: carona_passageiros || result_carona[0].passageiros,
+                                        carro_id: carona_carro || result_carona[0].carro_id
+                                    }
+                                },(err, result) => {
+                                    if(err) return resposta.send(err)
+                                    resposta.send()
+                                })
+                            }
+                        })
+                    }
                 }
             });
         })
